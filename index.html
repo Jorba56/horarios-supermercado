@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supermercado - Gestor de Horarios</title>
+    <title>Eroski Monesterio - Horarios</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -12,7 +12,11 @@
 
 <div class="layout">
     <aside class="sidebar no-print">
-        <h2>Panel de Control</h2>
+        <div style="text-align: center; margin-bottom: 15px;">
+            <h2 style="color: #0369a1; margin:0; font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">EROSKI</h2>
+            <p style="margin:0; font-weight: bold; color: #64748b; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem;">Monesterio</p>
+        </div>
+
         <p class="help-text hide-mobile">Arrastra a la tabla</p>
         <p class="help-text show-mobile">Toca turno, luego celda</p>
 
@@ -41,7 +45,10 @@
 
     <main class="main-content">
         <div id="export-section">
-            <h1 class="export-title">Cuadrante Semanal</h1>
+            <div class="export-title">
+                <span style="color: #0369a1;">EROSKI</span> Monesterio <br>
+                <span style="font-size: 16px; color: #64748b; font-weight: normal;">Cuadrante de Horarios Semanal</span>
+            </div>
             <div class="table-container">
                 <table id="scheduleTable">
                     <thead>

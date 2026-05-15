@@ -1,5 +1,5 @@
 // ============================================================================
-// GESTOR DE HORARIOS INTELIGENTE - MOTOR MANAGER PRO V8 (SÁBADOS CORREGIDOS)
+// GESTOR DE HORARIOS INTELIGENTE - EROSKI MONESTERIO V9
 // ============================================================================
 
 const employees = [
@@ -15,7 +15,7 @@ const templates = {
 };
 
 let activeMobileShift = null;
-const STORAGE_KEY = 'supermercado_horarios_v1';
+const STORAGE_KEY = 'eroski_monesterio_horarios';
 
 // ============================================================================
 // 1. FUNCIONES DE EXPORTACIÓN
@@ -37,7 +37,7 @@ window.downloadImage = function() {
     setTimeout(() => {
         html2canvas(element, { scale: 2, backgroundColor: "#ffffff", useCORS: true }).then(canvas => {
             let link = document.createElement('a');
-            link.download = 'Cuadrante_Semanal.png';
+            link.download = 'Eroski_Monesterio_Cuadrante.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
             window.finishExport();
@@ -50,7 +50,7 @@ window.downloadPDF = function() {
     setTimeout(() => {
         const opt = {
             margin: 10,
-            filename: 'Cuadrante_Semanal.pdf',
+            filename: 'Eroski_Monesterio_Cuadrante.pdf',
             image: { type: 'jpeg', quality: 1.0 },
             html2canvas: { scale: 2, backgroundColor: "#ffffff" },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
@@ -164,7 +164,7 @@ function loadScheduleLocally() {
 }
 
 // ============================================================================
-// 4. EL CEREBRO DE GENERACIÓN MATEMÁTICO (V8 - SIN SÁBADOS MAÑANA)
+// 4. EL CEREBRO DE GENERACIÓN MATEMÁTICO
 // ============================================================================
 
 window.generateStandard = function() { window.generateSmartSchedule(); };
@@ -192,6 +192,7 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
     // FASE 2: TARDES (BLINDAJE DE 3 PERSONAS Y SÁBADOS)
     let aftCounts = { Valen:0, Susana:0, María:0, Julián:0, Isa:0, Carmen:0 };
 
+    // Sábado: 2 de tarde fijos
     if (holiday !== 'sabado') {
         t.satGroup.forEach(emp => {
             if (isAvail(emp, 'sabado')) { grid[emp]['sabado'].addAfternoon(16.0, 21.5); aftCounts[emp]++; }
@@ -216,7 +217,7 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
         }
     });
 
-    // FASE 3: MAÑANAS BASE (SÓLO DE LUNES A VIERNES)
+    // FASE 3: MAÑANAS BASE
     if (holiday !== 'viernes') {
         ['Susana', 'María', 'Julián', 'Isa', 'Carmen'].forEach(emp => {
             if (grid[emp]['viernes'].status !== "Baja" && grid[emp]['viernes'].status !== "Festivo") {
@@ -225,7 +226,17 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
         });
     }
 
-    // ELIMINADA LA ASIGNACIÓN DE SÁBADO MAÑANA.
+    // SÁBADO MAÑANA: EXACTAMENTE 2 PERSONAS (Priorizando a quienes tengan menos horas acumuladas)
+    if (holiday !== 'sabado') {
+        let mCand = ['Susana', 'María', 'Julián', 'Isa', 'Carmen'].filter(e => isAvail(e, 'sabado'));
+        mCand.sort((a, b) => getHours(a) - getHours(b)); // Ordenar para dar turno a los más descansados
+
+        for(let i = 0; i < 2 && i < mCand.length; i++) {
+            let emp = mCand[i];
+            if (emp === 'Isa') grid[emp]['sabado'].addMorning(8.0, 13.5);
+            else grid[emp]['sabado'].addMorning(8.0, 14.0);
+        }
+    }
 
     ['lunes', 'martes', 'miercoles', 'jueves'].filter(d => d !== holiday).forEach(day => {
         if (grid['Valen'][day].status !== "Baja" && grid['Valen'][day].status !== "Festivo" && grid['Valen'][day].aStart === null) grid['Valen'][day].addMorning(8.0, 14.0);
@@ -248,7 +259,7 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
         }
     });
 
-    // FASE 5: MICRO-AJUSTES (EVITANDO TOCAR EL SÁBADO)
+    // FASE 5: MICRO-AJUSTES (El sábado es sagrado, no se retoca para cuadrar)
     for (let loop = 0; loop < 150; loop++) {
         let allPerfect = true;
         employees.forEach(emp => {
@@ -261,7 +272,7 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
             if (Math.random() > 0.5) checkDays.reverse();
 
             for (let day of checkDays) {
-                if (day === 'sabado') continue; // Sábado es intocable
+                if (day === 'sabado') continue; // No modificar los sábados
 
                 let s = grid[emp.name][day];
                 if (s.status !== "Trabajando") continue;
@@ -351,10 +362,19 @@ window.calculateAndValidate = function() {
         if (isFestivo) {
             html += `<div class="rule"><span class="badge warn">FESTIVO</span> <span>${day.toUpperCase()}: Cerrado</span></div>`;
         } else {
-            const target = day === 'sabado' ? 2 : 3;
-            const isOk = coverage[day].a === target;
-            html += `<div class="rule"><span class="badge ${isOk ? 'ok' : 'fail'}">${isOk ? 'OK' : 'ERR'}</span> 
-                     <span>${day.toUpperCase()}: ${coverage[day].a} tardes (Obj: ${target})</span></div>`;
+            const targetAfternoon = day === 'sabado' ? 2 : 3;
+            const isAftOk = coverage[day].a === targetAfternoon;
+
+            // Validación específica de Sábado Mañana (Al menos 2)
+            if (day === 'sabado') {
+                const isMornOk = coverage[day].m >= 2;
+                if (!isMornOk) {
+                    html += `<div class="rule"><span class="badge fail">ERR</span> <span>SÁBADO: ${coverage[day].m} mañanas (Mínimo: 2)</span></div>`;
+                }
+            }
+
+            html += `<div class="rule"><span class="badge ${isAftOk ? 'ok' : 'fail'}">${isAftOk ? 'OK' : 'ERR'}</span> 
+                     <span>${day.toUpperCase()}: ${coverage[day].a} tardes (Obj: ${targetAfternoon})</span></div>`;
         }
     });
 
