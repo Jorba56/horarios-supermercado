@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supermercado - Gestor de Horarios</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<div class="layout">
+    <aside class="sidebar no-print">
+        <h2>Panel de Control</h2>
+        <p class="help-text hide-mobile">Arrastra a la tabla</p>
+        <p class="help-text show-mobile">Toca turno, luego celda</p>
+
+        <div class="shift-pool" id="shift-pool">
+            <div class="shift-pill morning" draggable="true" data-shift="08:00-14:00">☀️ 08:00-14:00</div>
+            <div class="shift-pill morning" draggable="true" data-shift="08:00-15:30">☀️ 08:00-15:30</div>
+            <div class="shift-pill morning" draggable="true" data-shift="08:00-13:30">☀️ 08:00-13:30</div>
+            <div class="shift-pill afternoon" draggable="true" data-shift="16:00-21:30">🌙 16:00-21:30</div>
+            <div class="shift-pill afternoon" draggable="true" data-shift="17:00-21:30">🌙 17:00-21:30</div>
+            <div class="shift-pill afternoon" draggable="true" data-shift="18:30-21:30">🌙 18:30-21:30</div>
+            <div class="shift-pill split" draggable="true" data-shift="08:00-14:00, 18:30-21:30">☀️🌙 Partido</div>
+            <div class="shift-pill libre" draggable="true" data-shift="Libre">🏖️ Libre</div>
+            <div class="shift-pill festivo" draggable="true" data-shift="Festivo">🎉 Festivo</div>
+            <div class="shift-pill baja" draggable="true" data-shift="Baja">🤒 Baja Médica</div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn-generate" onclick="generateStandard()">🎲 Generador Perfecto</button>
+            <button class="btn-variables" onclick="openModal()">⚙️ Festivos / Bajas</button>
+            <button class="btn-pdf" onclick="downloadPDF()">📄 Descargar PDF</button>
+            <button class="btn-img" onclick="downloadImage()">📸 Imagen (WhatsApp)</button>
+            <button class="btn-clear" onclick="clearTable()">🗑️ Vaciar Todo</button>
+        </div>
+        <div class="save-status" id="save-status">💾 Guardado localmente</div>
+    </aside>
+
+    <main class="main-content">
+        <div id="export-section">
+            <h1 class="export-title">Cuadrante Semanal</h1>
+            <div class="table-container">
+                <table id="scheduleTable">
+                    <thead>
+                    <tr>
+                        <th>Empleado</th><th>Obj.</th>
+                        <th>Lunes</th><th>Martes</th><th>Miércoles</th>
+                        <th>Jueves</th><th>Viernes</th><th>Sábado</th>
+                        <th>Total</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                    <tfoot>
+                    <tr class="coverage-row">
+                        <td colspan="2"><strong>🛒 Cobertura (Mñn/Tar)</strong></td>
+                        <td id="cov-lunes">-</td><td id="cov-martes">-</td><td id="cov-miercoles">-</td>
+                        <td id="cov-jueves">-</td><td id="cov-viernes">-</td><td id="cov-sabado">-</td>
+                        <td></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="validation-panel no-print" id="validations"></div>
+    </main>
+</div>
+
+<div id="varModal" class="modal hidden no-print">
+    <div class="modal-content">
+        <h3>Variables de la Semana</h3>
+        <div class="form-group">
+            <label>Día Festivo (Tienda cerrada):</label>
+            <select id="selFestivo">
+                <option value="">Ninguno</option>
+                <option value="lunes">Lunes</option>
+                <option value="martes">Martes</option>
+                <option value="miercoles">Miércoles</option>
+                <option value="jueves">Jueves</option>
+                <option value="viernes">Viernes</option>
+                <option value="sabado">Sábado</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Trabajador de Baja Médica:</label>
+            <select id="selBaja">
+                <option value="">Ninguno</option>
+                <option value="Valen">Valen</option>
+                <option value="Susana">Susana</option>
+                <option value="María">María</option>
+                <option value="Julián">Julián</option>
+                <option value="Isa">Isa</option>
+                <option value="Carmen">Carmen</option>
+            </select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-generate" onclick="applyVariablesAndGenerate()">Generar Cuadrante</button>
+            <button class="btn-clear" onclick="closeModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

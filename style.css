@@ -1,0 +1,109 @@
+:root {
+    --primary: #2563eb; --bg: #f8fafc; --card: #ffffff;
+    --border: #e2e8f0; --text: #1e293b; --warning: #ef4444; --success: #10b981;
+}
+
+body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+.layout { display: flex; height: 100vh; overflow: hidden; }
+
+/* Barra Lateral */
+.sidebar { width: 280px; background: var(--card); padding: 20px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; box-shadow: 2px 0 5px rgba(0,0,0,0.05); z-index: 10; flex-shrink: 0;}
+.sidebar h2 { margin: 0; color: var(--primary); }
+.help-text { font-size: 0.85rem; color: #64748b; margin-top: -10px; }
+.show-mobile { display: none; }
+
+/* Colores de Turnos (Pills y Celdas) */
+.shift-pool { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; padding-right: 5px; }
+.shift-pill, .shift-block { padding: 8px; border-radius: 6px; font-weight: 600; text-align: center; border: 1px solid transparent; font-size: 0.9rem;}
+.shift-pill { cursor: pointer; user-select: none; transition: 0.2s; padding: 12px;}
+.shift-pill:active { transform: scale(0.95); }
+
+.morning { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+.afternoon { background: #e0e7ff; border-color: #c7d2fe; color: #3730a3; }
+.split { background: linear-gradient(135deg, #fef3c7 50%, #e0e7ff 50%); border-color: #cbd5e1; color: #1e293b; }
+.libre { background: #f1f5f9; border-color: #cbd5e1; color: #64748b; }
+.festivo { background: #fce7f3; border-color: #fbcfe8; color: #9d174d; }
+.baja { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+
+.shift-pill.selected { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4); transform: scale(1.02); }
+
+/* Botones del Panel */
+.action-buttons { display: flex; flex-direction: column; gap: 8px; }
+button { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+.btn-generate { background: var(--primary); }
+.btn-variables { background: #8b5cf6; }
+.btn-pdf { background: #e11d48; }     /* Rojo PDF */
+.btn-img { background: #10b981; }     /* Verde WhatsApp */
+.btn-clear { background: #64748b; }
+button:hover { filter: brightness(1.1); }
+.save-status { text-align: center; font-size: 0.8rem; color: #10b981; font-weight: bold; opacity: 0; transition: opacity 0.3s;}
+.save-status.show { opacity: 1; }
+
+/* Tabla Principal y Área de Exportación */
+.main-content { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column;}
+#export-section { background: var(--bg); border-radius: 8px; padding-bottom: 20px; }
+.export-title { display: none; text-align: center; color: #000; margin-bottom: 20px; font-size: 28px; font-weight: 900;}
+.table-container { width: 100%; overflow-x: auto; background: var(--card); border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;}
+table { width: 100%; border-collapse: collapse; min-width: 900px; }
+th, td { border: 1px solid var(--border); padding: 8px; text-align: center; vertical-align: middle; }
+th { background: #f8fafc; position: sticky; top: 0; z-index: 1; }
+
+td.dropzone { transition: background 0.2s; cursor: pointer; min-width: 110px;}
+td.dropzone:hover { background: #f1f5f9; }
+td.dropzone.drag-over { background: #bfdbfe; border: 2px dashed var(--primary); }
+
+.shift-container { display: flex; flex-direction: column; gap: 4px; }
+.hours-col { font-weight: bold; background: #f8fafc; font-size: 1.1rem; }
+.over-hours { color: var(--warning); }
+.perfect-hours { color: var(--success); }
+
+/* Fila de Cobertura */
+.coverage-row { background: #f1f5f9; font-size: 0.9rem; }
+.cov-m { color: #b45309; font-weight: bold; }
+.cov-a { color: #4338ca; font-weight: bold; }
+
+/* Validaciones y Modales */
+.validation-panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+.rule { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.95rem; }
+.badge { padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+.badge.ok { background: #d1fae5; color: #065f46; }
+.badge.warn { background: #fef08a; color: #854d0e; }
+.badge.fail { background: #fee2e2; color: #991b1b; }
+
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 50; }
+.modal.hidden { display: none; }
+.modal-content { background: white; padding: 30px; border-radius: 12px; width: 400px; max-width: 90%; }
+.form-group { margin-bottom: 20px; display: flex; flex-direction: column; gap: 5px; }
+.form-group select { padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1rem; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ================================================= */
+/* ESTADO MÁGICO DE EXPORTACIÓN (Para HTML2CANVAS)   */
+/* ================================================= */
+.exporting {
+    background: white !important;
+    padding: 20px !important;
+    width: 1100px !important; /* Fuerza ancho para que la tabla quepa sin scroll */
+}
+.exporting .table-container {
+    overflow: visible !important;
+    box-shadow: none !important;
+}
+.exporting .export-title {
+    display: block !important;
+}
+
+/* ================================================= */
+/* RESPONSIVE DESIGN (MÓVILES Y TABLETS)             */
+/* ================================================= */
+@media (max-width: 850px) {
+    .layout { flex-direction: column; overflow-y: auto; }
+    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); padding: 15px; box-sizing: border-box; }
+    .shift-pool { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding-bottom: 15px; }
+    .shift-pill { white-space: nowrap; flex-shrink: 0; }
+    .action-buttons { flex-direction: row; flex-wrap: wrap; }
+    .action-buttons button { flex: 1; font-size: 0.9rem; padding: 10px; min-width: 120px;}
+    .hide-mobile { display: none; }
+    .show-mobile { display: block; color: var(--primary); font-weight: bold; margin-bottom: 5px;}
+    .main-content { overflow-y: visible; }
+}
