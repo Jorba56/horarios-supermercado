@@ -437,5 +437,4 @@ function initTable() {
     if (!loadScheduleLocally()) calculateAndValidate();
     else calculateAndValidate();
 }
-
 document.addEventListener('DOMContentLoaded', initTable);
