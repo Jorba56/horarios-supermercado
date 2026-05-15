@@ -1,5 +1,5 @@
 // ============================================================================
-// GESTOR DE HORARIOS INTELIGENTE - MOTOR MANAGER PRO V7 (CON BORRADO RÁPIDO)
+// GESTOR DE HORARIOS INTELIGENTE - MOTOR MANAGER PRO V8 (SÁBADOS CORREGIDOS)
 // ============================================================================
 
 const employees = [
@@ -164,7 +164,7 @@ function loadScheduleLocally() {
 }
 
 // ============================================================================
-// 4. EL CEREBRO DE GENERACIÓN MATEMÁTICO (V7)
+// 4. EL CEREBRO DE GENERACIÓN MATEMÁTICO (V8 - SIN SÁBADOS MAÑANA)
 // ============================================================================
 
 window.generateStandard = function() { window.generateSmartSchedule(); };
@@ -189,7 +189,7 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
     if (sickEmp) days.forEach(d => grid[sickEmp][d].setSpecial("Baja"));
     if (holiday) employees.forEach(e => grid[e.name][holiday].setSpecial("Festivo"));
 
-    // FASE 2: TARDES (BLINDAJE DE 3 PERSONAS)
+    // FASE 2: TARDES (BLINDAJE DE 3 PERSONAS Y SÁBADOS)
     let aftCounts = { Valen:0, Susana:0, María:0, Julián:0, Isa:0, Carmen:0 };
 
     if (holiday !== 'sabado') {
@@ -216,7 +216,7 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
         }
     });
 
-    // FASE 3: MAÑANAS BASE
+    // FASE 3: MAÑANAS BASE (SÓLO DE LUNES A VIERNES)
     if (holiday !== 'viernes') {
         ['Susana', 'María', 'Julián', 'Isa', 'Carmen'].forEach(emp => {
             if (grid[emp]['viernes'].status !== "Baja" && grid[emp]['viernes'].status !== "Festivo") {
@@ -224,10 +224,9 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
             }
         });
     }
-    if (holiday !== 'sabado') {
-        let mCand = ['Susana', 'María', 'Julián', 'Isa', 'Carmen'].filter(e => isAvail(e, 'sabado'));
-        if (mCand.length > 0) grid[mCand[Math.floor(Math.random() * mCand.length)]]['sabado'].addMorning(8.0, 14.0);
-    }
+
+    // ELIMINADA LA ASIGNACIÓN DE SÁBADO MAÑANA.
+
     ['lunes', 'martes', 'miercoles', 'jueves'].filter(d => d !== holiday).forEach(day => {
         if (grid['Valen'][day].status !== "Baja" && grid['Valen'][day].status !== "Festivo" && grid['Valen'][day].aStart === null) grid['Valen'][day].addMorning(8.0, 14.0);
         ['Susana', 'María', 'Julián', 'Isa', 'Carmen'].forEach(emp => {
@@ -249,7 +248,7 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
         }
     });
 
-    // FASE 5: MICRO-AJUSTES
+    // FASE 5: MICRO-AJUSTES (EVITANDO TOCAR EL SÁBADO)
     for (let loop = 0; loop < 150; loop++) {
         let allPerfect = true;
         employees.forEach(emp => {
@@ -262,8 +261,11 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
             if (Math.random() > 0.5) checkDays.reverse();
 
             for (let day of checkDays) {
+                if (day === 'sabado') continue; // Sábado es intocable
+
                 let s = grid[emp.name][day];
                 if (s.status !== "Trabajando") continue;
+
                 if (diff >= 0.5) {
                     if (s.mStart !== null && s.mEnd < 15.5) { s.mEnd += 0.5; diff -= 0.5; break; }
                     if (s.aStart !== null && s.aStart > 16.0) { s.aStart -= 0.5; diff -= 0.5; break; }
@@ -390,7 +392,6 @@ function setupInteractions() {
             }
         });
 
-        // BORRADO RÁPIDO: Tecla Suprimir o Backspace
         zone.addEventListener('keydown', (e) => {
             if (e.key === 'Backspace' || e.key === 'Delete') {
                 e.preventDefault();
@@ -399,7 +400,6 @@ function setupInteractions() {
             }
         });
 
-        // BORRADO RÁPIDO: Doble clic con el ratón
         zone.addEventListener('dblclick', (e) => {
             e.preventDefault();
             zone.innerHTML = new Shift().toHTML();
@@ -437,4 +437,5 @@ function initTable() {
     if (!loadScheduleLocally()) calculateAndValidate();
     else calculateAndValidate();
 }
+
 document.addEventListener('DOMContentLoaded', initTable);
