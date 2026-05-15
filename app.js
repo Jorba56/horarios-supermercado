@@ -1,5 +1,5 @@
 // ============================================================================
-// GESTOR DE HORARIOS INTELIGENTE - EROSKI MONESTERIO V9
+// GESTOR DE HORARIOS INTELIGENTE - EROSKI MONESTERIO V10 (Horario 9-2 y 6-9)
 // ============================================================================
 
 const employees = [
@@ -74,6 +74,7 @@ class Shift {
     addMorning(s, e) { this.status = "Trabajando"; this.mStart = s; this.mEnd = e; }
     addAfternoon(s, e) { this.status = "Trabajando"; this.aStart = s; this.aEnd = e; }
     removeMorning() { this.mStart = null; this.mEnd = null; if (this.aStart === null) this.status = "Libre"; }
+    removeAfternoon() { this.aStart = null; this.aEnd = null; if (this.mStart === null) this.status = "Libre"; }
 
     getHours() {
         if (this.status !== "Trabajando") return 0;
@@ -164,7 +165,7 @@ function loadScheduleLocally() {
 }
 
 // ============================================================================
-// 4. EL CEREBRO DE GENERACIÓN MATEMÁTICO
+// 4. EL CEREBRO DE GENERACIÓN MATEMÁTICO (HORARIOS DE MONESTERIO)
 // ============================================================================
 
 window.generateStandard = function() { window.generateSmartSchedule(); };
@@ -192,57 +193,69 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
     // FASE 2: TARDES (BLINDAJE DE 3 PERSONAS Y SÁBADOS)
     let aftCounts = { Valen:0, Susana:0, María:0, Julián:0, Isa:0, Carmen:0 };
 
-    // Sábado: 2 de tarde fijos
+    // Sábado: 2 de tarde (Horario 18:00 a 21:00)
     if (holiday !== 'sabado') {
         t.satGroup.forEach(emp => {
-            if (isAvail(emp, 'sabado')) { grid[emp]['sabado'].addAfternoon(16.0, 21.5); aftCounts[emp]++; }
+            if (isAvail(emp, 'sabado')) { grid[emp]['sabado'].addAfternoon(18.0, 21.0); aftCounts[emp]++; }
         });
     }
 
     const weekdays = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'].filter(d => d !== holiday);
     weekdays.forEach(day => {
         let needed = 3;
+
+        // Semana que Valen hace tarde (Lunes) -> 18:00 a 21:00
         if (weekType === 3 && day === 'lunes' && isAvail('Valen', day)) {
-            grid['Valen'][day].addAfternoon(17.0, 21.5); aftCounts['Valen']++; needed--;
+            grid['Valen'][day].addAfternoon(18.0, 21.0); aftCounts['Valen']++; needed--;
         }
+
         let cands = ['Susana', 'María', 'Julián', 'Isa', 'Carmen'].filter(e => isAvail(e, day));
         cands.sort((a, b) => aftCounts[a] - aftCounts[b]);
 
         for (let i = 0; i < needed && i < cands.length; i++) {
             let emp = cands[i];
-            if (emp === 'Isa') grid[emp][day].addAfternoon(17.0, 20.0);
-            else if (emp === 'Susana') grid[emp][day].addAfternoon(18.5, 21.5);
-            else grid[emp][day].addAfternoon(17.0, 21.5);
+            // Susana entra a las 18:30. Resto a las 18:00.
+            if (emp === 'Susana') grid[emp][day].addAfternoon(18.5, 21.0);
+            else grid[emp][day].addAfternoon(18.0, 21.0);
             aftCounts[emp]++;
         }
     });
 
-    // FASE 3: MAÑANAS BASE
+    // FASE 3: MAÑANAS BASE (Apertura 09:00 a 14:00)
+    // Excepción 1: Isa y Susana siempre a las 08:00
+    // Excepción 2: Viernes todos a las 08:00 menos Valen
+
     if (holiday !== 'viernes') {
         ['Susana', 'María', 'Julián', 'Isa', 'Carmen'].forEach(emp => {
             if (grid[emp]['viernes'].status !== "Baja" && grid[emp]['viernes'].status !== "Festivo") {
-                if (emp === 'Isa') grid[emp]['viernes'].addMorning(8.0, 13.5); else grid[emp]['viernes'].addMorning(8.0, 14.0);
+                if (emp === 'Isa') grid[emp]['viernes'].addMorning(8.0, 13.5);
+                else grid[emp]['viernes'].addMorning(8.0, 14.0);
             }
         });
     }
 
-    // SÁBADO MAÑANA: EXACTAMENTE 2 PERSONAS (Priorizando a quienes tengan menos horas acumuladas)
+    // SÁBADO MAÑANA: EXACTAMENTE 2 PERSONAS
     if (holiday !== 'sabado') {
         let mCand = ['Susana', 'María', 'Julián', 'Isa', 'Carmen'].filter(e => isAvail(e, 'sabado'));
-        mCand.sort((a, b) => getHours(a) - getHours(b)); // Ordenar para dar turno a los más descansados
+        mCand.sort((a, b) => getHours(a) - getHours(b));
 
         for(let i = 0; i < 2 && i < mCand.length; i++) {
             let emp = mCand[i];
             if (emp === 'Isa') grid[emp]['sabado'].addMorning(8.0, 13.5);
-            else grid[emp]['sabado'].addMorning(8.0, 14.0);
+            else if (emp === 'Susana') grid[emp]['sabado'].addMorning(8.0, 14.0);
+            else grid[emp]['sabado'].addMorning(9.0, 14.0); // Los demás a las 9:00
         }
     }
 
     ['lunes', 'martes', 'miercoles', 'jueves'].filter(d => d !== holiday).forEach(day => {
-        if (grid['Valen'][day].status !== "Baja" && grid['Valen'][day].status !== "Festivo" && grid['Valen'][day].aStart === null) grid['Valen'][day].addMorning(8.0, 14.0);
+        if (grid['Valen'][day].status !== "Baja" && grid['Valen'][day].status !== "Festivo" && grid['Valen'][day].aStart === null) {
+            grid['Valen'][day].addMorning(9.0, 14.0); // Valen a las 9
+        }
         ['Susana', 'María', 'Julián', 'Isa', 'Carmen'].forEach(emp => {
-            if (grid[emp][day].status !== "Baja" && grid[emp][day].status !== "Festivo") {
-                if (emp === 'Isa') grid[emp][day].addMorning(8.0, 13.5); else grid[emp][day].addMorning(8.0, 14.0);
+            if (grid[emp][day].status !== "Baja" && grid[emp][day].status !== "Festivo" && grid[emp][day].mStart === null) {
+                if (emp === 'Isa') grid[emp][day].addMorning(8.0, 13.5);
+                else if (emp === 'Susana') grid[emp][day].addMorning(8.0, 14.0);
+                else grid[emp][day].addMorning(9.0, 14.0); // Los demás a las 9:00
             }
         });
     });
@@ -251,7 +264,7 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
     employees.forEach(emp => {
         let diff = emp.target - getHours(emp.name);
         let failsafe = 10;
-        while (diff <= -4.0 && failsafe > 0) {
+        while (diff <= -3.0 && failsafe > 0) {
             failsafe--; let trimmed = false;
             for (let day of weekdays) { if (grid[emp.name][day].mStart !== null && grid[emp.name][day].aStart !== null && day !== 'viernes') { grid[emp.name][day].removeMorning(); trimmed = true; break; } }
             if (!trimmed) { for (let day of weekdays) { if (grid[emp.name][day].mStart !== null && grid[emp.name][day].aStart === null && day !== 'viernes') { grid[emp.name][day].removeMorning(); trimmed = true; break; } } }
@@ -259,7 +272,7 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
         }
     });
 
-    // FASE 5: MICRO-AJUSTES (El sábado es sagrado, no se retoca para cuadrar)
+    // FASE 5: MICRO-AJUSTES REALISTAS (Sábado intocable)
     for (let loop = 0; loop < 150; loop++) {
         let allPerfect = true;
         employees.forEach(emp => {
@@ -272,17 +285,25 @@ window.generateSmartSchedule = function(holiday = null, sickEmp = null) {
             if (Math.random() > 0.5) checkDays.reverse();
 
             for (let day of checkDays) {
-                if (day === 'sabado') continue; // No modificar los sábados
+                if (day === 'sabado') continue;
 
                 let s = grid[emp.name][day];
                 if (s.status !== "Trabajando") continue;
 
                 if (diff >= 0.5) {
-                    if (s.mStart !== null && s.mEnd < 15.5) { s.mEnd += 0.5; diff -= 0.5; break; }
-                    if (s.aStart !== null && s.aStart > 16.0) { s.aStart -= 0.5; diff -= 0.5; break; }
+                    // SUMAR HORAS: Entrar media hora antes (ej. 08:30 en vez de 09:00)
+                    if (s.mStart !== null && s.mStart > 8.0) { s.mStart -= 0.5; diff -= 0.5; break; }
+                    // SUMAR HORAS: Adelantar tarde (ej. 17:30 en vez de 18:00)
+                    if (s.aStart !== null && s.aStart > 17.5) { s.aStart -= 0.5; diff -= 0.5; break; }
+                    // SUMAR HORAS: Quedarse media hora más por la mañana (ej. 14:30)
+                    if (s.mEnd !== null && s.mEnd < 14.5) { s.mEnd += 0.5; diff -= 0.5; break; }
                 } else if (diff <= -0.5) {
-                    if (s.mStart !== null && s.mEnd > 11.0) { s.mEnd -= 0.5; diff += 0.5; break; }
-                    if (s.aStart !== null && s.aStart < 19.5) { s.aStart += 0.5; diff += 0.5; break; }
+                    // RESTAR HORAS: Entrar más tarde (ej. 09:30 en vez de 09:00)
+                    if (s.mStart !== null && s.mStart < 9.5) { s.mStart += 0.5; diff += 0.5; break; }
+                    // RESTAR HORAS: Entrar más tarde por la tarde (ej. 18:30 en vez de 18:00)
+                    if (s.aStart !== null && s.aStart < 19.0) { s.aStart += 0.5; diff += 0.5; break; }
+                    // RESTAR HORAS: Salir antes (ej. 13:30 en vez de 14:00)
+                    if (s.mEnd !== null && s.mEnd > 13.0) { s.mEnd -= 0.5; diff += 0.5; break; }
                 }
             }
         });
@@ -365,7 +386,6 @@ window.calculateAndValidate = function() {
             const targetAfternoon = day === 'sabado' ? 2 : 3;
             const isAftOk = coverage[day].a === targetAfternoon;
 
-            // Validación específica de Sábado Mañana (Al menos 2)
             if (day === 'sabado') {
                 const isMornOk = coverage[day].m >= 2;
                 if (!isMornOk) {

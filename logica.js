@@ -11,7 +11,7 @@ const templates = {
 };
 
 // =========================================
-// CALCULADORA DE HORAS
+//          CALCULADORA DE HORAS
 // =========================================
 function parseHours(shiftStr) {
     if (!shiftStr || shiftStr === "Libre" || shiftStr === "Festivo" || shiftStr === "Baja") return 0;
